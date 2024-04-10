@@ -21,7 +21,7 @@ dependencies {
     implementation group: 'com.android.tools.external.com-intellij', name: 'intellij-core', version: intellij_core_version
 
     // ACHTUNHG!!! Local file!
-    implementation files("/home/olezhka/.konan/kotlin-native-linux-x86_64-1.9.0-Beta/konan/lib/kotlin-native-compiler-embeddable.jar")
+    implementation files("/home/Anzhela.Sukhanova/fuzzer/NativeCompiler/lib/kotlin-native-linux-x86_64-1.9.23/konan/lib/kotlin-native-compiler-embeddable.jar")
 
     // Vert.x
     implementation "io.vertx:vertx-core:$vertx_version"
@@ -45,5 +45,5 @@ application {
 run.doFirst {
     environment 'kotlin_native_version', kotlin_native_version
     // ACHTUNHG!!! Local file!
-    environment 'kotlin-home', "/home/olezhka/.konan/kotlin-native-linux-x86_64-1.9.0-Beta"
+    environment 'kotlin-home', "/home/Anzhela.Sukhanova/fuzzer/NativeCompiler/lib/kotlin-native-linux-x86_64-1.9.23"
 }

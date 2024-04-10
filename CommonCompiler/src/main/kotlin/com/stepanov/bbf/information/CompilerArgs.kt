@@ -7,7 +7,8 @@ import java.util.jar.JarFile
 
 object CompilerArgs {
 
-    private val file: File = File("bbf.conf")
+    private val file: File = File("${System.getProperty("user.home")}fuzzer/JVMCompiler/bbf.conf")
+    private val absoluteLibPath = "${System.getProperty("user.dir")}/tmp/lib"
 
     fun getPropValue(name: String): String? {
         val props = Properties()
@@ -32,7 +33,9 @@ object CompilerArgs {
     fun getStdLibPath(libToSearch: String): String {
         val kotlinVersion = System.getenv("kotlin_jvm_version")
             ?: throw Exception("Dont see kotlinVersion parameter in environment variables (Should be defined in build.gradle)")
-        "tmp/lib/$libToSearch-$kotlinVersion.jar".let {
+        val libFile = if (libToSearch == "kotlin-gradle-plugin") "$libToSearch-$kotlinVersion-gradle70" else
+            "$libToSearch-$kotlinVersion"
+        "$absoluteLibPath/$libFile.jar".let {
             require(File(it).exists())
             return it
         }
@@ -42,8 +45,8 @@ object CompilerArgs {
         val lib = jarFile.entries().asSequence().first { it.name == name }
         val input = jarFile.getInputStream(lib)
         val content = IOUtils.toString(input, "UTF-8")
-        File("tmp/lib/").mkdirs()
-        File("tmp/lib/$name").writeText(content)
+        File(absoluteLibPath).mkdirs()
+        File("$absoluteLibPath/$name").writeText(content)
     }
 
     fun createJSLib(): String {
@@ -51,7 +54,7 @@ object CompilerArgs {
         val jarFile = JarFile(File(pathToJar))
         findAndSaveLib("kotlin.js", jarFile)
         findAndSaveLib("kotlin.meta.js", jarFile)
-        return "${System.getProperty("user.dir")}/tmp/lib/"
+        return absoluteLibPath
     }
 
     val baseDir = getPropValueWithoutQuotes("MUTATING_DIR")
@@ -142,6 +145,6 @@ object CompilerArgs {
         getStdLibPath("kotlin-stdlib-js"),
         getStdLibPath("kotlin-test-js")
     )
-    val pathToStdLibScheme = "tmp/lib/standardLibraryTree.txt"
-    val pathToSerializedCommits = "tmp/serializedPatches/"
+    val pathToStdLibScheme = "$absoluteLibPath/standardLibraryTree.txt"
+    val pathToSerializedCommits = "${System.getProperty("user.dir")}/tmp/serializedPatches/"
 }
