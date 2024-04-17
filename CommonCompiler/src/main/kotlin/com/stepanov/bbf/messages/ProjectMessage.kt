@@ -24,7 +24,6 @@ data class ProjectMessage(
 
     fun moveAllCodeInOneFile() =
         StringBuilder().apply {
-            appendLine("// files")
             files.forEach {
                 appendLine("// ${it.name}")
                 appendLine("// isKlib=${it.isKlib}")

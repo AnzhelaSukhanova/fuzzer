@@ -29,9 +29,11 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
             val compiler = K2JVMCompiler()
             compiler.exec(MsgCollector, services, args)
         }
+        val crashComment = MsgCollector.crashMessages.map { it.replace("\n", "\n//") }
+        val errorComment = MsgCollector.compileErrorMessages.map { it.replace("\n", "\n//") }
         val status = KotlincInvokeStatus(
-            MsgCollector.crashMessages.joinToString("\n") +
-                    MsgCollector.compileErrorMessages.joinToString("\n"),
+            "//" + crashComment.joinToString("\n") +
+                    errorComment.joinToString("\n"),
             !MsgCollector.hasCompileError,
             MsgCollector.hasException,
             hasTimeout,

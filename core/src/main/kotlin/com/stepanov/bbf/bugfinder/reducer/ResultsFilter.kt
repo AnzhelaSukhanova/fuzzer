@@ -45,8 +45,8 @@ object ResultsFilter {
     private fun extractStackTrace(file: File): String {
         val fileText = file.readText()
         var result = if (file.name.contains("FRONTEND")) {
-            val tracePart1 = fileText.substringAfterLast("causeThrowable").substringBefore("----")
-            val tracePart2 = "\tat" + fileText.substringAfterLast("----").substringAfter("\tat")
+            val tracePart1 = fileText.substringAfterLast("causeThrowable").substringBefore("//----")
+            val tracePart2 = "//" + fileText.substringAfterLast("//----").substringAfter("//")
             tracePart1 + tracePart2
         }
         else
