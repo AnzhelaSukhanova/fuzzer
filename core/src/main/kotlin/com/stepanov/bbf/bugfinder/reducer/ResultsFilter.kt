@@ -46,7 +46,7 @@ object ResultsFilter {
         val fileText = file.readText()
         var result = if (file.name.contains("FRONTEND")) {
             val tracePart1 = fileText.substringAfterLast("causeThrowable").substringBefore("//----")
-            val tracePart2 = "//" + fileText.substringAfterLast("//----").substringAfter("//")
+            val tracePart2 = "//\tat" + fileText.substringAfterLast("//----").substringAfter("//\tat")
             tracePart1 + tracePart2
         }
         else

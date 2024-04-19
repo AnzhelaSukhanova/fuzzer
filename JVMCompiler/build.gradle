@@ -74,3 +74,9 @@ run {
 run.doFirst {
     environment 'kotlin_jvm_version', kotlin_jvm_compiler_version
 }
+
+task runComparer(type: JavaExec) {
+    environment 'kotlin_jvm_version', '1.8.0'
+    main = 'com.stepanov.bbf.ResultsComparer'
+    classpath = sourceSets.main.runtimeClasspath
+}
