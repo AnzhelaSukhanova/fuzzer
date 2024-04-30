@@ -24,4 +24,5 @@ tmp/*.kt
 core/bugsPerMinute.txt
 core/dummy.kt
 
+core/tmp/results/shortRuns/*
 

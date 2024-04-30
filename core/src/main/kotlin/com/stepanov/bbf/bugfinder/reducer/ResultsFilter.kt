@@ -2,6 +2,7 @@ package com.stepanov.bbf.bugfinder.reducer
 
 import com.stepanov.bbf.information.CompilerArgs
 import java.io.File
+import kotlin.system.exitProcess
 
 object ResultsFilter {
     fun filter() {
@@ -43,14 +44,20 @@ object ResultsFilter {
     }
 
     private fun extractStackTrace(file: File): String {
-        val fileText = file.readText()
+        val prefix = "Combined output:"
+        var fileText = file.readText()
+        if (!fileText.contains("//$prefix")) {
+            val crashText = "//$prefix" + fileText.substringAfterLast("Combined output:").lines().joinToString("\n//")
+            fileText = fileText.substringBefore("Combined output:") + crashText
+            file.writeText(fileText)
+        }
         var result = if (file.name.contains("FRONTEND")) {
-            val tracePart1 = fileText.substringAfterLast("causeThrowable").substringBefore("//----")
+            val tracePart1 = fileText.substringAfterLast("//causeThrowable").substringBefore("//----")
             val tracePart2 = "//\tat" + fileText.substringAfterLast("//----").substringAfter("//\tat")
             tracePart1 + tracePart2
         }
         else
-            fileText.substringAfterLast("Combined output:")
+            fileText.substringAfterLast("//$prefix")
         val idRegex = Regex("@([0-9]|[a-z])*")
         result = result.replace(idRegex, "")
         return result

@@ -11,30 +11,32 @@ import org.apache.log4j.PropertyConfigurator
 import java.io.File
 
 val jvmCompiler = JVMCompiler()
+val crashPrefix = "Combined output:"
 
 fun commentStackTrace() {
     TODO()
 }
 
-fun sameMessage(file: File, result: KotlincInvokeResult): Boolean {
+fun getMessages(file: File, result: KotlincInvokeResult): Pair<String, String> {
 
     fun format(fileText: String): String {
         val trace = if (fileText.contains("Exception while analyzing expression")) {
-            val tracePart1 = fileText.substringAfterLast("causeThrowable").substringBefore("//----")
+            val tracePart1 = fileText.substringAfterLast("causeThrowable\n").substringBefore("//----")
             val tracePart2 = "//\tat" + fileText.substringAfterLast("//----").substringAfter("//\tat")
             tracePart1 + tracePart2
         } else
-            fileText.substringAfterLast("Combined output:")
+            fileText.substringAfterLast("$crashPrefix\n")
         val idRegex = Regex("@([0-9]|[a-z])*")
-        return trace.replace(idRegex, "")
+        val fileRegex = Regex("\n//File being compiled: .*\n")
+        val resultTrace = trace.replace(idRegex, "").replace(fileRegex, "\n")
+        return resultTrace.lines().take(20).joinToString("\n")
     }
-
-    File("/home/Anzhela.Sukhanova/1.txt").writeText(result.results[0].combinedOutput)
     val fileText = file.readText()
 
     val oldStackTrace = format(file.readText())
-    val newStackTrace =  format(result.results[0].combinedOutput)
-    return oldStackTrace == newStackTrace
+    File("/home/Anzhela.Sukhanova/1.txt").writeText(result.results[0].combinedOutput)
+    val newStackTrace = format(result.results[0].combinedOutput)
+    return Pair(oldStackTrace, newStackTrace)
 }
 
 fun main() {
@@ -47,17 +49,25 @@ fun main() {
 
     File(absoluteResultsDir).walkTopDown().filter { it.isFile }.forEach { file ->
         val absoluteFileName = file.absolutePath
+        var fileText = file.readText()
+        if (!fileText.contains("//$crashPrefix")) {
+            val crashText = "//$crashPrefix" + fileText.substringAfterLast("Combined output:").lines().joinToString("\n//")
+            fileText = fileText.substringBefore("Combined output:") + crashText
+            file.writeText(fileText)
+        }
         val projectToCompile = ProjectMessage(
-            listOf(FileData(file.name, file.readText())),
+            listOf(FileData(file.name, fileText)),
             absoluteResultsDir)
         val result = jvmCompiler.executeCompilationCheck(projectToCompile)
 
-        if (!sameMessage(file, result)) {
-            log.info("Another problem: $absoluteFileName")
-            log.info(result.results[0].combinedOutput.lines().take(10).joinToString("\n"))
-        }
-        else if (!result.hasCompilerCrash)
+        val messages = getMessages(file, result)
+        if (!result.hasCompilerCrash)
             log.info("No crashes: $absoluteFileName")
+        else if (messages.first != messages.second) {
+            log.info("Another problem: $absoluteFileName")
+            log.info(messages.first)
+            log.info(messages.second)
+        }
     }
 }
 
