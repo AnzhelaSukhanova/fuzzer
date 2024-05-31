@@ -6,7 +6,6 @@ import com.stepanov.bbf.information.VertxAddresses
 import com.stepanov.bbf.messages.KotlincInvokeResult
 import com.stepanov.bbf.messages.KotlincInvokeStatus
 import com.stepanov.bbf.messages.ProjectMessage
-import org.apache.commons.io.FileUtils
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import org.jetbrains.kotlin.config.Services
@@ -21,8 +20,8 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
         super.start()
     }
 
-    override fun executeCompilationCheck(project: ProjectMessage): KotlincInvokeResult {
-        val args = prepareArgs(project, project.dir)
+    override fun executeCompilationCheck(project: ProjectMessage, previousVersion: Boolean): KotlincInvokeResult {
+        val args = prepareArgs(project, project.dir, previousVersion)
         val hasTimeout = !executeCompiler {
             MsgCollector.clear()
             val services = Services.EMPTY
@@ -39,14 +38,15 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
             hasTimeout,
             CompilationArgs()
         )
-        return KotlincInvokeResult(project, listOf(status))
+        return KotlincInvokeResult(project, listOf(status), previousVersion)
     }
 
     override fun checkCompiling(project: ProjectMessage): KotlincInvokeResult =
         executeCompilationCheck(project)
 
     // TODO: add some additional arguments maybe
-    private fun prepareArgs(project: ProjectMessage, destination: String): K2JVMCompilerArguments {
+    private fun prepareArgs(project: ProjectMessage, destination: String, previousVersion: Boolean = false): K2JVMCompilerArguments {
+        CompilerArgs.previousVersion = previousVersion
         val projectArgs = K2JVMCompilerArguments()
         val compilerArgs = "${getAllPathsInLine(project)} -d $destination".split(" ")
         projectArgs.apply { K2JVMCompiler().parseArguments(compilerArgs.toTypedArray(), this) }

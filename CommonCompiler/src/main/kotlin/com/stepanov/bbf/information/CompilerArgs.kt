@@ -6,9 +6,10 @@ import java.util.*
 import java.util.jar.JarFile
 
 object CompilerArgs {
-
+    var previousVersion: Boolean = false
     private val file: File = File("${System.getProperty("user.home")}fuzzer/JVMCompiler/bbf.conf")
     private val absoluteLibPath = "${System.getProperty("user.dir")}/tmp/lib"
+    // private val absoluteLibPath = "${System.getProperty("user.dir")}/JVMCompiler/tmp/lib"
 
     fun getPropValue(name: String): String? {
         val props = Properties()
@@ -31,10 +32,10 @@ object CompilerArgs {
         ?: throw IllegalArgumentException("Cannot init $name property")
 
     fun getStdLibPath(libToSearch: String): String {
-        val kotlinVersion = System.getenv("kotlin_jvm_version")
-            ?: throw Exception("Dont see kotlinVersion parameter in environment variables (Should be defined in build.gradle)")
-        val libFile = if (libToSearch == "kotlin-gradle-plugin") "$libToSearch-$kotlinVersion-gradle70" else
-            "$libToSearch-$kotlinVersion"
+        val version = (if (previousVersion) System.getenv("kotlin_previous_version") else System.getenv("kotlin_jvm_version")) ?:
+            throw Exception("Dont see kotlinVersion parameter in environment variables (Should be defined in build.gradle)")
+        val libFile = if (libToSearch == "kotlin-gradle-plugin") "$libToSearch-$version-gradle70" else
+            "$libToSearch-$version"
         "$absoluteLibPath/$libFile.jar".let {
             require(File(it).exists())
             return it
@@ -62,7 +63,7 @@ object CompilerArgs {
     val dirForNewTests = "$baseDir/newTests"
 
     //PATHS TO COMPILERS
-    val pathToJsKotlinLib = createJSLib()
+    //val pathToJsKotlinLib = createJSLib()
     val pathToTmpFile = getPropValueWithoutQuotes("TMPFILE")
     val pathToTmpDir = pathToTmpFile.substringBeforeLast("/")
     val pathToMutatedDir = getPropValueWithoutQuotes("ALL_MUTATED_DIR")

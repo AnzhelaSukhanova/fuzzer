@@ -3,6 +3,7 @@
 
 */build
 */logs
+logs/
 *tmp/build
 build
 client
@@ -23,6 +24,10 @@ tmp/*.kt
 
 core/bugsPerMinute.txt
 core/dummy.kt
+core/seedWeightsDump.txt
 
+core/tmp/results/curBugs/
 core/tmp/results/shortRuns/*
+core/tmp/results/run-*
+core/tmp/results/JVM-*
 

@@ -31,10 +31,8 @@ fun getMessages(file: File, result: KotlincInvokeResult): Pair<String, String> {
         val resultTrace = trace.replace(idRegex, "").replace(fileRegex, "\n")
         return resultTrace.lines().take(20).joinToString("\n")
     }
-    val fileText = file.readText()
 
     val oldStackTrace = format(file.readText())
-    File("/home/Anzhela.Sukhanova/1.txt").writeText(result.results[0].combinedOutput)
     val newStackTrace = format(result.results[0].combinedOutput)
     return Pair(oldStackTrace, newStackTrace)
 }
@@ -44,9 +42,8 @@ fun main() {
         System.getProperty("user.home") +
             "fuzzer/JVMCompiler/src/main/resources/comparerLog4j.properties")
 
-    val absoluteResultsDir = "${System.getProperty("user.home")}fuzzer/core/${CompilerArgs.resultsDir}/"
-    log.info("Comparison with ${System.getenv("kotlin_jvm_version")}\n")
-
+    val absoluteResultsDir = "${System.getProperty("user.home")}fuzzer/core/tmp/results/curBugs"
+    log.info("Comparison with ${System.getenv("kotlin_previous_version")}")
     File(absoluteResultsDir).walkTopDown().filter { it.isFile }.forEach { file ->
         val absoluteFileName = file.absolutePath
         var fileText = file.readText()
@@ -58,7 +55,7 @@ fun main() {
         val projectToCompile = ProjectMessage(
             listOf(FileData(file.name, fileText)),
             absoluteResultsDir)
-        val result = jvmCompiler.executeCompilationCheck(projectToCompile)
+        val result = jvmCompiler.executeCompilationCheck(projectToCompile, previousVersion = true)
 
         val messages = getMessages(file, result)
         if (!result.hasCompilerCrash)
@@ -69,6 +66,7 @@ fun main() {
             log.info(messages.second)
         }
     }
+    log.info("The end")
 }
 
 private val log: Logger = Logger.getLogger("comparerLogger")

@@ -25,7 +25,8 @@ class KotlincInvokeStatus(
 @Serializable
 class KotlincInvokeResult(
     val projectMessage: ProjectMessage,
-    val results: List<KotlincInvokeStatus>
+    val results: List<KotlincInvokeStatus>,
+    val previousVersion: Boolean = false
 ) {
     val isCompileSuccess = results.all { it.isCompileSuccess }
     val hasCompilerCrash = results.any { it.hasCompilerCrash() }

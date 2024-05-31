@@ -3,6 +3,8 @@ package com.stepanov.bbf.bugfinder.coordinator
 import com.stepanov.bbf.bugfinder.mutator.vertxMessages.MutationRequest
 import com.stepanov.bbf.bugfinder.mutator.vertxMessages.MutationResult
 import com.stepanov.bbf.bugfinder.server.messages.MutationProblem
+import com.stepanov.bbf.bugfinder.server.messages.RegressionTarget
+import com.stepanov.bbf.bugfinder.server.messages.WeightedProjects
 import com.stepanov.bbf.information.VertxAddresses
 import com.stepanov.bbf.messages.CompilationRequest
 import com.stepanov.bbf.messages.CompilationResult
@@ -13,6 +15,7 @@ import io.vertx.core.eventbus.EventBus
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.apache.log4j.Logger
+import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
 class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticle() {
@@ -24,7 +27,7 @@ class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticl
         eb = vertx.eventBus()
         establishConsumers()
         log.debug("Coordinator deployed with mutation problem:")
-        val projectToCompile = mutationProblem.getProjectMessage()
+        val projectToCompile = mutationProblem.getProjectMessage() // Why?
         log.debug(json.encodeToString(mutationProblem))
         startWithNewProject()
     }
@@ -54,6 +57,7 @@ class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticl
             log.debug("Got compilation result")
             val compileResult = msg.body()
             val projectsToSend = mutableListOf<ProjectMessage>()
+            var projectCrashed = false
             compileResult.results.forEach { result ->
                 checkedProjects.add(result.projectMessage)
 
@@ -62,8 +66,17 @@ class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticl
                     successfullyCompiledProjects.add(result.projectMessage)
                 }
                 if (result.hasCompilerCrash) {
-                    log.debug("Found some bug")
+                    if (result.previousVersion)
+                        log.debug("Bug in ${System.getenv("kotlin_previous_version")}")
+                    log.debug("Bug in ${System.getenv("kotlin_jvm_version")}")
                     sendResultToBugManager(result)
+                    if (mutationProblem.mutationTarget is RegressionTarget) {
+                        val filename = result.projectMessage.files[0].name
+                        val newWeight = WeightedProjects.reduceWeight(filename)
+                        log.debug("$filename have new weight: $newWeight")
+                        WeightedProjects.fileToWeight.dump("seedWeightsDump.txt")
+                        projectCrashed = true
+                    }
                 }
             }
             log.debug("Got ${projectsToSend.size} projects, successfully compiled")
@@ -74,7 +87,7 @@ class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticl
                 log.debug("MUTATION PROBLEM IS COMPLETED")
                 eb.send(VertxAddresses.mutationProblemCompleted, coordinatorNumber)
             }
-            sendNextTransformation(projectsToSend)
+            sendNextTransformation(projectsToSend, projectCrashed)
         }
 
         eb.consumer<MutationResult>(VertxAddresses.mutationResult) { result ->
@@ -88,10 +101,10 @@ class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticl
         }
     }
 
-    private fun sendNextTransformation(projects: List<ProjectMessage>) {
+    private fun sendNextTransformation(projects: List<ProjectMessage>, projectCrashed: Boolean = false) {
         if (mutationProblem.isNotFinished()) {
             val transformation = mutationProblem.getNextTransformationAndIncreaseCounter()
-            val projectToSend = getProjectsToSend(projects)
+            val projectToSend = getProjectsToSend(projects, projectCrashed)
             eb.send(VertxAddresses.mutate,
                 MutationRequest(
                     transformation,
@@ -125,8 +138,8 @@ class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticl
         eb.send(VertxAddresses.transformationStatistics, result)
     }
 
-    private fun getProjectsToSend(latestProjects: List<ProjectMessage>): List<ProjectMessage> {
-        if (successfullyCompiledProjects.isEmpty() || successfullyCompiledProjects.size > LIMIT_OF_COMPILED_PROJECTS) {
+    private fun getProjectsToSend(latestProjects: List<ProjectMessage>, projectCrashed: Boolean = false): List<ProjectMessage> {
+        if (successfullyCompiledProjects.isEmpty() || successfullyCompiledProjects.size > LIMIT_OF_COMPILED_PROJECTS || projectCrashed) {
             val newProject = mutationProblem.getProjectMessage()
             log.debug("Created new starting project ${newProject.files.firstOrNull()?.name}")
             successfullyCompiledProjects.clear()

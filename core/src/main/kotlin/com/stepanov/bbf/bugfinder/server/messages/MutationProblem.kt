@@ -10,8 +10,6 @@ import com.stepanov.bbf.util.getSimpleNameFile
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
@@ -117,6 +115,8 @@ sealed class SingleSourceTarget: MutationTarget() {
     override fun createProjectMessage(): ProjectMessage {
         if (this is RandomFileTarget)
             this.updateRandomFile()
+        else if (this is RegressionTarget)
+            this.updateFile()
         writeFile()
         return ProjectMessage(listOf(FileData(simpleFileName(), getSourceCode())))
     }
@@ -135,6 +135,29 @@ sealed class SingleSourceTarget: MutationTarget() {
 }
 
 @Serializable
+@SerialName("regressions")
+class RegressionTarget: SingleSourceTarget() {
+    private var tmpFileName = weightedRandomTmpFileName()
+
+    private val code
+        get() = File("tmp/arrays/$tmpFileName").readText()
+    private val name
+        get() = "projectTmp/$tmpFileName"
+
+    override fun getLocalName(): String = name
+
+    override fun getSourceCode(): String = code
+
+
+    private fun weightedRandomTmpFileName() = WeightedProjects.fileToWeight.getRandom()
+
+
+    fun updateFile() {
+        tmpFileName = weightedRandomTmpFileName()
+    }
+}
+
+@Serializable
 @SerialName("random")
 class RandomFileTarget: SingleSourceTarget() {
     private var tmpFileName = randomTmpFileName()
@@ -148,10 +171,8 @@ class RandomFileTarget: SingleSourceTarget() {
 
     override fun getSourceCode(): String = code
 
-
     private fun randomTmpFileName() =
-        File("tmp/arrays/").listFiles()?.filter { it.path.endsWith(".kt") }?.random()!!.name
-
+        getAllKtFiles("tmp/arrays/")?.random()!!.name
 
     fun updateRandomFile() {
         tmpFileName = randomTmpFileName()
@@ -197,5 +218,25 @@ data class ProjectTarget(
     }
 }
 
+object WeightedProjects {
+    var fileToWeight = WeightedList<String>(emptyList()).apply {
+        val prioritizedFilenames = getAllKtFiles("tmp/arrays/changedAfter1.8.0")!!.map { "changedAfter1.8.0/${it.name}" }
+        val filenames = (getAllKtFiles("tmp/arrays/")!!.map { it.name } + prioritizedFilenames)
+        for (filename in filenames.shuffled()) {
+            if (filename.contains("changedAfter1.8.0"))
+                this.add(filename, 10.0)
+            else
+                this.add(filename, 1.0)
+        }
+    }
+
+    fun reduceWeight(filename: String): Double {
+        return fileToWeight.multiply(filename, 0.5)
+    }
+}
+
 fun parseMutationProblem(data: String): MutationProblem =
     Json.decodeFromString<MutationProblem>(data).also { it.validate() }
+
+fun getAllKtFiles(pathname: String): List<File>? =
+    File(pathname).listFiles()?.filter { it.path.endsWith(".kt") }

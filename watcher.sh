@@ -8,7 +8,7 @@ run_jvm_compiler() {
 send_request() {
 	sleep 2m
 	cd mutationRequests
-	curl -v -H "Content-Type: application/json" --data @jvmAllRandom.json http://localhost:8888/mutation-problem
+	curl -v -H "Content-Type: application/json" --data @jvmAllRegressions.json http://localhost:8888/mutation-problem
 	cd ../
 }
 

@@ -26,13 +26,18 @@ abstract class CommonCompiler(
         log.debug("Compiler deployed")
     }
 
-    abstract fun executeCompilationCheck(project: ProjectMessage): KotlincInvokeResult
+    abstract fun executeCompilationCheck(project: ProjectMessage, previousVersion: Boolean = false): KotlincInvokeResult
 
     private fun registerCodecs() {
         vertx.eventBus().registerDefaultCodec(CompilationRequest::class.java, CompilationRequestCodec())
         vertx.eventBus().registerDefaultCodec(CompilationResult::class.java, CompilationResultCodec())
         vertx.eventBus().registerDefaultCodec(ProjectMessage::class.java, ProjectMessageCodec())
         vertx.eventBus().registerDefaultCodec(KotlincInvokeResult::class.java, KotlincInvokeResultCodec())
+    }
+
+    private fun previousVersionCheck(project: ProjectMessage): KotlincInvokeResult {
+        val result = executeCompilationCheck(project, previousVersion = true)
+        return result
     }
 
     private fun establishConsumers() {
@@ -44,8 +49,13 @@ abstract class CommonCompiler(
             val compileResults = mutableListOf<KotlincInvokeResult>()
             request.projects.forEach { projectMessage ->
                 createLocalTmpProject(projectMessage)
-                val compileResult = executeCompilationCheck(projectMessage)
-                compileResults.add(compileResult)
+                val previousVersionResult = previousVersionCheck(projectMessage)
+                if (previousVersionResult.hasCompilerCrash)
+                    compileResults.add(previousVersionResult)
+                else {
+                    val compileResult = executeCompilationCheck(projectMessage)
+                    compileResults.add(compileResult)
+                }
                 deleteLocalTmpProject(projectMessage)
             }
             log.debug("Sending back compile results")
