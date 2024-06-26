@@ -25,9 +25,12 @@ tmp/*.kt
 core/bugsPerMinute.txt
 core/dummy.kt
 core/seedWeightsDump.txt
+core/test.txt
 
 core/tmp/results/curBugs/
 core/tmp/results/shortRuns/*
 core/tmp/results/run-*
 core/tmp/results/JVM-*
 
+1.txt
+*/1.txt
