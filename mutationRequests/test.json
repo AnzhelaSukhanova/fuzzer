@@ -1,0 +1,12 @@
+{
+  "compilers": [
+    "JVMCompiler"
+  ],
+  "allowedTransformations": {
+    "type": "All"
+  },
+  "mutationTarget": {
+    "type": "test"
+  },
+  "mutationCount": 0
+}

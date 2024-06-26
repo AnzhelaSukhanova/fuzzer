@@ -40,6 +40,7 @@ do
 		subdir="$dir/JVM-$full_data"
 		mkdir "$subdir"
 		cp -r core/logs "$subdir"/logs
+		cp core/seedWeightsDump.txt "$subdir"/logs/
 		if [ -n "$(ls -A "core/tmp/results/curBugs")" ]; then
 			mv core/tmp/results/curBugs/* "$subdir"
 		fi
@@ -49,3 +50,4 @@ do
 		full_data=$(date '+%Y-%m-%d-%H-%M-%S')
 	fi
 done
+

@@ -14,6 +14,8 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import org.slf4j.LoggerFactory
 import java.lang.Exception
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 
 
 abstract class CommonCompiler(
@@ -26,7 +28,8 @@ abstract class CommonCompiler(
         log.debug("Compiler deployed")
     }
 
-    abstract fun executeCompilationCheck(project: ProjectMessage, previousVersion: Boolean = false): KotlincInvokeResult
+    abstract fun executeCompilationCheck(project: ProjectMessage): KotlincInvokeResult
+    abstract fun executeCompilationCheck(project: ProjectMessage, version: String): KotlincInvokeResult
 
     private fun registerCodecs() {
         vertx.eventBus().registerDefaultCodec(CompilationRequest::class.java, CompilationRequestCodec())
@@ -35,27 +38,18 @@ abstract class CommonCompiler(
         vertx.eventBus().registerDefaultCodec(KotlincInvokeResult::class.java, KotlincInvokeResultCodec())
     }
 
-    private fun previousVersionCheck(project: ProjectMessage): KotlincInvokeResult {
-        val result = executeCompilationCheck(project, previousVersion = true)
-        return result
-    }
-
     private fun establishConsumers() {
         val eb = vertx.eventBus()
         eb.consumer<CompilationRequest>(compileAddress) { msg ->
-
             val request = msg.body()
             log.debug("Got ${request.projects.size} projects to compile")
             val compileResults = mutableListOf<KotlincInvokeResult>()
             request.projects.forEach { projectMessage ->
                 createLocalTmpProject(projectMessage)
-                val previousVersionResult = previousVersionCheck(projectMessage)
-                if (previousVersionResult.hasCompilerCrash)
-                    compileResults.add(previousVersionResult)
-                else {
-                    val compileResult = executeCompilationCheck(projectMessage)
-                    compileResults.add(compileResult)
-                }
+                var compileResult = executeCompilationCheck(projectMessage, "1.8")
+                if (!compileResult.hasCompilerCrash)
+                    compileResult = executeCompilationCheck(projectMessage)
+                compileResults.add(compileResult)
                 deleteLocalTmpProject(projectMessage)
             }
             log.debug("Sending back compile results")
@@ -86,7 +80,7 @@ abstract class CommonCompiler(
     abstract fun checkCompiling(project: ProjectMessage): KotlincInvokeResult
 
     private fun createLocalTmpProject(project: ProjectMessage) {
-        File(project.dir).mkdir()
+        File(project.dir).mkdirs()
         project.files.forEach { (name, text) ->
             File(project.dir + name).writeText(text)
         }

@@ -113,12 +113,11 @@ sealed class MutationTarget {
 sealed class SingleSourceTarget: MutationTarget() {
 
     override fun createProjectMessage(): ProjectMessage {
-        if (this is RandomFileTarget)
-            this.updateRandomFile()
-        else if (this is RegressionTarget)
-            this.updateFile()
+        this.updateFile()
         writeFile()
-        return ProjectMessage(listOf(FileData(simpleFileName(), getSourceCode())))
+        val directory = getLocalName().substringBeforeLast("/") + "/"
+        return ProjectMessage(
+            listOf(FileData(simpleFileName(), getSourceCode())), directory)
     }
 
     fun simpleFileName(): String = getLocalName().getSimpleNameFile()
@@ -132,6 +131,8 @@ sealed class SingleSourceTarget: MutationTarget() {
         File(fileName.substringBeforeLast("/")).mkdir()
             File(fileName).writeText(getSourceCode())
     }
+
+    abstract fun updateFile()
 }
 
 @Serializable
@@ -152,8 +153,28 @@ class RegressionTarget: SingleSourceTarget() {
     private fun weightedRandomTmpFileName() = WeightedProjects.fileToWeight.getRandom()
 
 
-    fun updateFile() {
+    override fun updateFile() {
         tmpFileName = weightedRandomTmpFileName()
+    }
+}
+
+@Serializable
+@SerialName("test")
+class TestTarget: SingleSourceTarget() {
+    private val files = getAllKtFiles("tmp/arrays/test")?.map { file -> file.name  }!! as MutableList<String>
+    private var tmpFileName: String? = null
+
+    private val code
+        get() = if (tmpFileName != null) File("tmp/arrays/test/$tmpFileName").readText() else ""
+    private val name
+        get() = "projectTmp/test/$tmpFileName"
+
+    override fun getLocalName(): String = name
+
+    override fun getSourceCode(): String = code
+
+    override fun updateFile() {
+        tmpFileName = files.removeFirstOrNull()
     }
 }
 
@@ -174,7 +195,7 @@ class RandomFileTarget: SingleSourceTarget() {
     private fun randomTmpFileName() =
         getAllKtFiles("tmp/arrays/")?.random()!!.name
 
-    fun updateRandomFile() {
+    override fun updateFile() {
         tmpFileName = randomTmpFileName()
     }
 }
@@ -185,6 +206,8 @@ class SourceFileTarget(val code: String): SingleSourceTarget() {
     override fun getLocalName(): String = "projectTmp/tmp.kt"
 
     override fun getSourceCode(): String = code
+
+    override fun updateFile() {}
 }
 
 @Serializable
@@ -198,6 +221,7 @@ class NameFileTarget(val name: String): SingleSourceTarget() {
 
     override fun getSourceCode(): String = code
 
+    override fun updateFile() {}
 }
 
 @Serializable
@@ -231,7 +255,7 @@ object WeightedProjects {
     }
 
     fun reduceWeight(filename: String): Double {
-        return fileToWeight.multiply(filename, 0.5)
+        return fileToWeight.multiply(filename, 0.9)
     }
 }
 

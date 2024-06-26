@@ -18,26 +18,26 @@ object FileReporter : Reporter {
         return "$year-$month-${day}_$hour-$minute-$second-$ms"
     }
 
-    override fun dump(bug: Bug): String {
-        val resDir = CompilerArgs.resultsDir
-
+    fun getMessage(bug: Bug): String {
         val info = StringBuilder()
         bug.result.results.forEach {
             info.appendLine("// ${it.arguments}")
         }
-
-        val name = currentTime()
-//                (if (bug.project.files.size == 1) "_FILE" else "_PROJECT") +
-//                (if (msg.contains("Exception while analyzing expression")) "_FRONTEND" else "_BACKEND")
-
-        val newPath = "$resDir/$name.kt"
-        File(newPath.substringBeforeLast('/')).mkdirs()
         val messages = bug.result.results.joinToString(
             prefix = "//Combined output:\n",
             separator = "//====================\n") { it.combinedOutput }
-
-        File(newPath).writeText("$info\n${bug.project.moveAllCodeInOneFile()}\n\n$messages")
-        return newPath
+        return "$info\n${bug.project.moveAllCodeInOneFile()}\n\n$messages"
     }
 
+    override fun dump(bug: Bug): String {
+        val resDir = CompilerArgs.resultsDir
+        val name = currentTime()
+        val newPath = "$resDir/$name.kt"
+        File(newPath.substringBeforeLast('/')).mkdirs()
+
+        val message = getMessage(bug)
+
+        File(newPath).writeText(message)
+        return newPath
+    }
 }

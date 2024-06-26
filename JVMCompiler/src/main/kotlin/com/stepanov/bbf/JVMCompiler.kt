@@ -9,7 +9,9 @@ import com.stepanov.bbf.messages.ProjectMessage
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import org.jetbrains.kotlin.config.Services
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 
 open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
 
@@ -20,8 +22,37 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
         super.start()
     }
 
-    override fun executeCompilationCheck(project: ProjectMessage, previousVersion: Boolean): KotlincInvokeResult {
-        val args = prepareArgs(project, project.dir, previousVersion)
+    override fun executeCompilationCheck(project: ProjectMessage, version: String): KotlincInvokeResult {
+        val statuses = mutableListOf<KotlincInvokeStatus>()
+        val args = prepareArgs(project, project.dir)
+        var combinedOutput = ""
+        var exitCode = 0
+        val directory = System.getProperty("user.home") + "fuzzer/"
+        project.files.forEach {
+            val hasTimeout = !executeCompiler {
+                val process = ProcessBuilder(
+                    directory + "commandLineCompiler.sh",
+                    version,
+                    "-classpath ${args.classpath}",
+                    directory + "core/" + project.dir + "/" + it.name).start()
+                val reader = BufferedReader(InputStreamReader(process.errorStream))
+                combinedOutput = reader.readText()
+                exitCode = process.waitFor()
+            }
+            val status = KotlincInvokeStatus(
+                combinedOutput,
+                exitCode == 0,
+                exitCode == 2,
+                hasTimeout,
+                CompilationArgs()
+            )
+            statuses.add(status)
+        }
+        return KotlincInvokeResult(project, statuses, version)
+    }
+
+    override fun executeCompilationCheck(project: ProjectMessage): KotlincInvokeResult {
+        val args = prepareArgs(project, project.dir)
         val hasTimeout = !executeCompiler {
             MsgCollector.clear()
             val services = Services.EMPTY
@@ -33,20 +64,19 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
         val status = KotlincInvokeStatus(
             "//" + crashComment.joinToString("\n") +
                     errorComment.joinToString("\n"),
-            !MsgCollector.hasCompileError,
+            !MsgCollector.hasException,
             MsgCollector.hasException,
             hasTimeout,
             CompilationArgs()
         )
-        return KotlincInvokeResult(project, listOf(status), previousVersion)
+        return KotlincInvokeResult(project, listOf(status))
     }
 
     override fun checkCompiling(project: ProjectMessage): KotlincInvokeResult =
         executeCompilationCheck(project)
 
     // TODO: add some additional arguments maybe
-    private fun prepareArgs(project: ProjectMessage, destination: String, previousVersion: Boolean = false): K2JVMCompilerArguments {
-        CompilerArgs.previousVersion = previousVersion
+    private fun prepareArgs(project: ProjectMessage, destination: String): K2JVMCompilerArguments {
         val projectArgs = K2JVMCompilerArguments()
         val compilerArgs = "${getAllPathsInLine(project)} -d $destination".split(" ")
         projectArgs.apply { K2JVMCompiler().parseArguments(compilerArgs.toTypedArray(), this) }
@@ -62,5 +92,4 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
         projectArgs.optIn = arrayOf("kotlin.ExperimentalStdlibApi", "kotlin.contracts.ExperimentalContracts")
         return projectArgs
     }
-
 }

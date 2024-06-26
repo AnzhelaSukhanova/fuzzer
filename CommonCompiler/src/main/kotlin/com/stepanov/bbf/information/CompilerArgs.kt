@@ -6,7 +6,6 @@ import java.util.*
 import java.util.jar.JarFile
 
 object CompilerArgs {
-    var previousVersion: Boolean = false
     private val file: File = File("${System.getProperty("user.home")}fuzzer/JVMCompiler/bbf.conf")
     private val absoluteLibPath = "${System.getProperty("user.dir")}/tmp/lib"
     // private val absoluteLibPath = "${System.getProperty("user.dir")}/JVMCompiler/tmp/lib"
@@ -32,7 +31,7 @@ object CompilerArgs {
         ?: throw IllegalArgumentException("Cannot init $name property")
 
     fun getStdLibPath(libToSearch: String): String {
-        val version = (if (previousVersion) System.getenv("kotlin_previous_version") else System.getenv("kotlin_jvm_version")) ?:
+        val version = System.getenv("kotlin_jvm_version")?:
             throw Exception("Dont see kotlinVersion parameter in environment variables (Should be defined in build.gradle)")
         val libFile = if (libToSearch == "kotlin-gradle-plugin") "$libToSearch-$version-gradle70" else
             "$libToSearch-$version"

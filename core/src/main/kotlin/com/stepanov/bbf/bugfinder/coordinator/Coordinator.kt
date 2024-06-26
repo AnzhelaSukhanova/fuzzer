@@ -27,8 +27,8 @@ class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticl
         eb = vertx.eventBus()
         establishConsumers()
         log.debug("Coordinator deployed with mutation problem:")
-        val projectToCompile = mutationProblem.getProjectMessage() // Why?
         log.debug(json.encodeToString(mutationProblem))
+        File("test.txt").writeText("")
         startWithNewProject()
     }
 
@@ -37,17 +37,24 @@ class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticl
         val newProject = mutationProblem.getProjectMessage()
         successfullyCompiledProjects.clear()
         checkedProjects.clear()
-        eb.send(VertxAddresses.checkCompile, newProject)
+        if (newProject.files[0].text.isNotEmpty())
+            eb.send(VertxAddresses.checkCompile, newProject)
     }
 
     private fun establishConsumers() {
         // when checking the initial project
         eb.consumer<KotlincInvokeResult>(VertxAddresses.checkCompileResult) { msg ->
             val result = msg.body()
+            val filename = result.projectMessage.files[0].name
             if (result.isCompileSuccess) {
                 successfullyCompiledProjects.add(result.projectMessage)
-                sendNextTransformation(listOf(result.projectMessage))
+                if (mutationProblem.isNotFinished())
+                    sendNextTransformation(listOf(result.projectMessage))
+                else
+                    startWithNewProject()
             } else {
+                if (result.hasCompilerCrash and mutationProblem.isFinished())
+                    File("test.txt").appendText("$filename\n")
                 startWithNewProject()
             }
         }
@@ -66,9 +73,7 @@ class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticl
                     successfullyCompiledProjects.add(result.projectMessage)
                 }
                 if (result.hasCompilerCrash) {
-                    if (result.previousVersion)
-                        log.debug("Bug in ${System.getenv("kotlin_previous_version")}")
-                    log.debug("Bug in ${System.getenv("kotlin_jvm_version")}")
+                    log.debug("Bug in ${result.version}")
                     sendResultToBugManager(result)
                     if (mutationProblem.mutationTarget is RegressionTarget) {
                         val filename = result.projectMessage.files[0].name

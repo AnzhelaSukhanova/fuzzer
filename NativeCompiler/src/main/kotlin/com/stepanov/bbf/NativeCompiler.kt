@@ -16,6 +16,10 @@ class NativeCompiler: CommonCompiler(VertxAddresses.NativeCompiler) {
         super.start()
     }
 
+    override fun executeCompilationCheck(project: ProjectMessage, version: String): KotlincInvokeResult {
+        TODO()
+    }
+
     override fun executeCompilationCheck(project: ProjectMessage): KotlincInvokeResult {
         val argsList = CompilationArgsGenerator.getAllCombinations(project)
         val statuses = argsList.map { compile(it) }
