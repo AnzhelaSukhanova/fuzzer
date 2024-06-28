@@ -6,7 +6,7 @@ import java.util.*
 import java.util.jar.JarFile
 
 object CompilerArgs {
-    private val file: File = File("${System.getProperty("user.home")}fuzzer/JVMCompiler/bbf.conf")
+    private val file: File = File("${System.getProperty("user.home")}/fuzzer/JVMCompiler/bbf.conf")
     private val absoluteLibPath = "${System.getProperty("user.dir")}/tmp/lib"
     // private val absoluteLibPath = "${System.getProperty("user.dir")}/JVMCompiler/tmp/lib"
 
