@@ -5,14 +5,14 @@ RUN pacman -Syy \
  && pacman --noconfirm -S git jdk11-openjdk
  		
 # setup JAVA_HOME
-ENV JAVA_HOME /lib/jvm/java-11-openjdk
+ENV JAVA_HOME=/lib/jvm/java-11-openjdk
 RUN export JAVA_HOME
                        
 # download fuzzer
 RUN cd /root \
  && git clone https://github.com/AnzhelaSukhanova/fuzzer.git \
  && cd fuzzer \
- && git checkout 4ad953f4
+ && git checkout 5f583327
 
 # prepare fuzzer
 WORKDIR /root/fuzzer
@@ -21,5 +21,7 @@ RUN sed -i -e 's,/usr/lib/jvm/java-11-openjdk-amd64,/lib/jvm/java-11-openjdk,g' 
  && ./gradlew JVMCompiler:download
  
 # run fuzzer
-CMD ["sh", "watcher.sh"]
+ARG REQUEST=jvmAllRegressions.json
+RUN echo $REQUEST
+CMD sh watcher.sh $REQUEST
 

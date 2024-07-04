@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mutation_request=$1
+
 run_jvm_compiler() {
 	sleep 1m
 	./gradlew JVMCompiler:run
@@ -8,7 +10,7 @@ run_jvm_compiler() {
 send_request() {
 	sleep 2m
 	cd mutationRequests
-	curl -v -H "Content-Type: application/json" --data @jvmAllRegressions.json http://localhost:8888/mutation-problem
+	curl -v -H "Content-Type: application/json" --data "@$mutation_request" http://localhost:8888/mutation-problem
 	cd ../
 }
 
@@ -36,7 +38,7 @@ do
 	last_update_time_s=$(stat core/logs/coordinator.log -c %Y)
 	time_from_last_update_s=$((cur_time_s-last_update_time_s))
 
-	if [ $time_from_last_update_s -ge 1800 ]; then
+	if [ $time_from_last_update_s -ge 3600 ]; then
 		subdir="$dir/JVM-$full_data"
 		mkdir "$subdir"
 		cp -r core/logs "$subdir"/logs
