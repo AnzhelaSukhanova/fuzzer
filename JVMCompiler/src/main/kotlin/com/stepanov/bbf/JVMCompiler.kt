@@ -27,7 +27,7 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
         val args = prepareArgs(project, project.dir)
         var combinedOutput = ""
         var exitCode = 0
-        val directory = System.getProperty("user.home") + "fuzzer/"
+        val directory = System.getProperty("user.home") + "/fuzzer/"
         project.files.forEach {
             val hasTimeout = !executeCompiler {
                 val process = ProcessBuilder(

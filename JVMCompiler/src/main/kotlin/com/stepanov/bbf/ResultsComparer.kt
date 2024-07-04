@@ -63,9 +63,9 @@ fun main() {
 
     PropertyConfigurator.configure(
         System.getProperty("user.home") +
-            "fuzzer/JVMCompiler/src/main/resources/comparerLog4j.properties")
+            "/fuzzer/JVMCompiler/src/main/resources/comparerLog4j.properties")
 
-    val absoluteResultsDir = "${System.getProperty("user.home")}fuzzer/core/tmp/results/curBugs"
+    val absoluteResultsDir = "${System.getProperty("user.home")}/fuzzer/core/tmp/results/JVM-2024-4-12_2024-4-15"
     log.info("Comparison with $previousLanguageVersion")
     val bothPassed = mutableListOf<String>()
     val regressions = mutableListOf<String>()

@@ -8,7 +8,7 @@ import org.apache.log4j.PropertyConfigurator
 
 fun main() {
     PropertyConfigurator.configure(System.getProperty("user.home") +
-            "fuzzer/CommonCompiler/log4j.properties")
+            "/fuzzer/CommonCompiler/log4j.properties")
     val manager = HazelcastClusterManager()
     Vertx.clusteredVertx(VertxOptions().setClusterManager(manager)) { res ->
         if (res.succeeded()) {
