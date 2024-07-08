@@ -12,7 +12,7 @@ class KotlincInvokeStatus(
     val hasTimeout: Boolean,
     val arguments: CompilationArgs,
 ) {
-    fun hasCompilerCrash(): Boolean = hasException
+    fun hasCompilerCrash(): Boolean = hasException //|| hasTimeout
 
     fun hasCompilationError(): Boolean = !isCompileSuccess
 

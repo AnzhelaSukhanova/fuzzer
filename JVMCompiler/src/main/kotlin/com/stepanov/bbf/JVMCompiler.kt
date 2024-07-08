@@ -24,15 +24,17 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
 
     override fun executeCompilationCheck(project: ProjectMessage, version: String): KotlincInvokeResult {
         val statuses = mutableListOf<KotlincInvokeStatus>()
-        val args = prepareArgs(project, project.dir)
+        val directory = "${System.getProperty("user.home")}/fuzzer/"
+        val destination = "$directory/JVMCompiler/${project.dir}/"
+        val args = prepareArgs(project, destination)
         var combinedOutput = ""
         var exitCode = 0
-        val directory = System.getProperty("user.home") + "/fuzzer/"
         project.files.forEach {
             val hasTimeout = !executeCompiler {
                 val process = ProcessBuilder(
                     directory + "commandLineCompiler.sh",
                     version,
+                    "-d $destination",
                     "-classpath ${args.classpath}",
                     directory + "core/" + project.dir + "/" + it.name).start()
                 val reader = BufferedReader(InputStreamReader(process.errorStream))
@@ -52,7 +54,7 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
     }
 
     override fun executeCompilationCheck(project: ProjectMessage): KotlincInvokeResult {
-        val args = prepareArgs(project, project.dir)
+        val args = prepareArgs(project, "${System.getProperty("user.home")}/fuzzer/JVMCompiler/${project.dir}")
         val hasTimeout = !executeCompiler {
             MsgCollector.clear()
             val services = Services.EMPTY
@@ -61,24 +63,25 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
         }
         val crashComment = MsgCollector.crashMessages.map { it.replace("\n", "\n//") }
         val errorComment = MsgCollector.compileErrorMessages.map { it.replace("\n", "\n//") }
+        val combinedOutput = "//" + crashComment.joinToString("\n") + errorComment.joinToString("\n")
         val status = KotlincInvokeStatus(
-            "//" + crashComment.joinToString("\n") +
-                    errorComment.joinToString("\n"),
+            combinedOutput,
             !MsgCollector.hasException,
             MsgCollector.hasException,
             hasTimeout,
             CompilationArgs()
         )
+        File("/home/Anzhela.Sukhanova/fuzzer/core/test.txt").appendText("$crashComment $hasTimeout\n")
         return KotlincInvokeResult(project, listOf(status))
     }
 
     override fun checkCompiling(project: ProjectMessage): KotlincInvokeResult =
-        executeCompilationCheck(project)
+        executeCompilationCheck(project) // check for seeds and test infrastructure
 
     // TODO: add some additional arguments maybe
     private fun prepareArgs(project: ProjectMessage, destination: String): K2JVMCompilerArguments {
         val projectArgs = K2JVMCompilerArguments()
-        val compilerArgs = "${getAllPathsInLine(project)} -d $destination".split(" ")
+        val compilerArgs = "${System.getProperty("user.home")}/fuzzer/JVMCompiler/${getAllPathsInLine(project)} -d $destination".split(" ")
         projectArgs.apply { K2JVMCompiler().parseArguments(compilerArgs.toTypedArray(), this) }
         projectArgs.classpath =
             "${CompilerArgs.jvmStdLibPaths().joinToString(
@@ -90,6 +93,10 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
                 .joinToString(":")
         projectArgs.jvmTarget = "1.8"
         projectArgs.optIn = arrayOf("kotlin.ExperimentalStdlibApi", "kotlin.contracts.ExperimentalContracts")
+
+        projectArgs.noReflect = true
+        projectArgs.noStdlib = true
+        projectArgs.useFirLT = false
         return projectArgs
     }
 }
