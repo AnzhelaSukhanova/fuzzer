@@ -45,7 +45,7 @@ class BugManager: AbstractVerticle() {
 
         try {
             log.debug("SAVING BUG")
-            if (ReportProperties.getPropAsBoolean("SAVE_STATS") == true) saveStats()
+            //if (ReportProperties.getPropAsBoolean("SAVE_STATS") == true) saveStats()
             //Report bugs
             return FileReporter.dump(bug)
         } catch (e: Exception) {
