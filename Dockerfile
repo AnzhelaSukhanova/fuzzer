@@ -12,7 +12,7 @@ RUN export JAVA_HOME
 RUN cd /root \
  && git clone https://github.com/AnzhelaSukhanova/fuzzer.git \
  && cd fuzzer \
- && git checkout 4e5013c9
+ && git checkout 165e439b
 
 # prepare fuzzer
 WORKDIR /root/fuzzer
