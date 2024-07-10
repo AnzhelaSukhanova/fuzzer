@@ -71,7 +71,6 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
             hasTimeout,
             CompilationArgs()
         )
-        File("/home/Anzhela.Sukhanova/fuzzer/core/test.txt").appendText("$crashComment $hasTimeout\n")
         return KotlincInvokeResult(project, listOf(status))
     }
 
