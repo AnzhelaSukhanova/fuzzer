@@ -46,7 +46,7 @@ abstract class CommonCompiler(
             val compileResults = mutableListOf<KotlincInvokeResult>()
             request.projects.forEach { projectMessage ->
                 createLocalTmpProject(projectMessage)
-                var compileResult = executeCompilationCheck(projectMessage, "1.8")
+                var compileResult = executeCompilationCheck(projectMessage, "1.8.0")
                 if (!compileResult.hasCompilerCrash)
                     compileResult = executeCompilationCheck(projectMessage)
                 compileResults.add(compileResult)

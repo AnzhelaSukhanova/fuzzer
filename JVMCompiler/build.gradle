@@ -29,7 +29,8 @@ dependencies {
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-compiler', version: "${kotlin_jvm_compiler_version}"
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-daemon-embeddable', version: "${kotlin_jvm_compiler_version}"
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: "${kotlin_jvm_compiler_version}"
-
+    //implementation group: 'org.jetbrains.kotlin', name: 'kotlin-build-tools-api', version: "1.9.20"
+    //implementation group: 'org.jetbrains.kotlin', name: 'kotlin-build-tools-impl', version: "1.9.20"
 
     implementation group: 'io.vertx', name: 'vertx-hazelcast', version: vertx_version
     implementation group: 'io.vertx', name: 'vertx-core', version: vertx_version
@@ -53,11 +54,12 @@ dependencies {
     toCopy group: 'org.jetbrains.kotlin', name: 'kotlin-test-js', version: "${kotlin_jvm_compiler_version}"
     toCopy group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: "${kotlin_jvm_compiler_version}"
     toCopy group: 'org.jetbrains.kotlin', name: 'kotlin-gradle-plugin', version: "${kotlin_jvm_compiler_version}"
-
+    //toCopy group: 'org.jetbrains.kotlin', name: 'kotlin-build-tools-api', version: "1.9.20"
+    //toCopy group: 'org.jetbrains.kotlin', name: 'kotlin-build-tools-impl', version: "1.9.20"
 }
 
 task download(type: Copy) {
-    if (!file("tmp/lib/kotlin-stdlib-${kotlin_jvm_compiler_version}.jar").exists()) {
+    if (!file("tmp/lib/${configurations.toCopy.last().name}-${kotlin_jvm_compiler_version}.jar").exists()) {
         from configurations.toCopy
         into 'tmp/lib'
     }

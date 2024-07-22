@@ -23,7 +23,7 @@ class WeightedList<T> {
     }
 
     fun multiply(element: T, time: Double): Double {
-        val i = findIndex(element) ?: throw Exception("The $element is not in the weighted list")
+        val i = findIndex(element) ?: return 0.0 //throw Exception("The $element is not in the weighted list")
         val weight = elements[i].weight * time
         replace(element, weight)
         return weight

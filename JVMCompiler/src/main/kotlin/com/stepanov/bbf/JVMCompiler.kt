@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.config.Services
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
+import java.util.*
 
 open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
 
@@ -98,4 +99,13 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
         projectArgs.useFirLT = false
         return projectArgs
     }
+
+    private fun getArgList(destination: String): List<String> = listOf(
+        "-d", destination,
+        "-jvm-target", "1.8",
+        "-opt-in", "kotlin.ExperimentalStdlibApi",
+        "-opt-in", "kotlin.contracts.ExperimentalContracts",
+        "-no-reflect",
+        "-no-stdlib"
+    )
 }

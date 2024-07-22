@@ -34,3 +34,6 @@ core/tmp/results/JVM-*
 
 1.txt
 */1.txt
+
+kotlinc1.8.0/
+kotlinc1.9.0/

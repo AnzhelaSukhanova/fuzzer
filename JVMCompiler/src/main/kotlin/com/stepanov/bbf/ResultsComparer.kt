@@ -11,8 +11,8 @@ import org.apache.log4j.PropertyConfigurator
 import java.io.File
 
 val jvmCompiler = JVMCompiler()
-const val previousLanguageVersion = "1.8"
-const val currentLanguageVersion = "1.9"
+const val previousLanguageVersion = "1.8.0"
+const val currentLanguageVersion = "1.9.0"
 const val crashPrefix = "Combined output:"
 
 fun commentStackTrace() {
@@ -65,14 +65,15 @@ fun main() {
         System.getProperty("user.home") +
             "/fuzzer/JVMCompiler/src/main/resources/comparerLog4j.properties")
 
-    val absoluteResultsDir = "${System.getProperty("user.home")}/fuzzer/core/tmp/results/JVM-2024-4-12_2024-4-15"
+    val dir = "tmp/arrays/test/"
+    val absoluteResultsDir = "${System.getProperty("user.home")}/fuzzer/core/$dir"
     log.info("Comparison with $previousLanguageVersion")
     val bothPassed = mutableListOf<String>()
     val regressions = mutableListOf<String>()
+    val timeouts = mutableListOf<String>()
     val other = mutableListOf<String>()
 
     File(absoluteResultsDir).walkTopDown().filter { it.isFile }.forEach { file ->
-        val absoluteFileName = file.absolutePath
         var fileText = file.readText()
         if (!fileText.contains("//$crashPrefix")) {
             val crashText = "//$crashPrefix" + fileText.substringAfterLast("Combined output:").lines().joinToString("\n//")
@@ -81,10 +82,11 @@ fun main() {
         }
         val projectToCompile = ProjectMessage(
             listOf(FileData(file.name, fileText)),
-            absoluteResultsDir)
+            dir)
         val result = jvmCompiler.executeCompilationCheck(projectToCompile, previousLanguageVersion)
         val expectedResult = jvmCompiler.executeCompilationCheck(projectToCompile, currentLanguageVersion)
         val messages = getMessages(result, expectedResult)
+        //log.info(messages.first)
 
         if (!result.hasCompilerCrash) {
             if (expectedResult.hasCompilerCrash)
@@ -92,11 +94,16 @@ fun main() {
             else
                 bothPassed.add(file.name)
         }
-        else other.add(file.name)
+        else if (result.results[0].hasTimeout || expectedResult.results[0].hasTimeout)
+            timeouts.add(file.name)
+        else {
+            other.add(file.name)
+        }
     }
 
     printResult(regressions, "Regressions")
     printResult(bothPassed, "Both passed")
+    printResult(timeouts, "Timeouts")
     printResult(other, "Other")
 }
 
