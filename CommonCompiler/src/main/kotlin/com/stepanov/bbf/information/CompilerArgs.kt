@@ -30,11 +30,12 @@ object CompilerArgs {
     fun getPropAsInt(name: String): Int = getPropValue(name)?.toInt()
         ?: throw IllegalArgumentException("Cannot init $name property")
 
-    fun getStdLibPath(libToSearch: String): String {
-        val version = System.getenv("kotlin_jvm_version")?:
+    fun getStdLibPath(libToSearch: String, version: String? = null): String {
+        var curVersion = System.getenv("kotlin_jvm_version")?:
             throw Exception("Dont see kotlinVersion parameter in environment variables (Should be defined in build.gradle)")
-        val libFile = if (libToSearch == "kotlin-gradle-plugin") "$libToSearch-$version-gradle70" else
-            "$libToSearch-$version"
+        curVersion = version ?: curVersion
+        val libFile = if (libToSearch == "kotlin-gradle-plugin") "$libToSearch-$curVersion-gradle70" else
+            "$libToSearch-$curVersion"
         "$absoluteLibPath/$libFile.jar".let {
             require(File(it).exists())
             return it
@@ -124,16 +125,16 @@ object CompilerArgs {
     val classpath = ""
 
     //STDLIB
-    fun jvmStdLibPaths() = listOf(
-        getStdLibPath("kotlin-stdlib"),
-        getStdLibPath("kotlin-stdlib-common"),
-        getStdLibPath("kotlin-test"),
-        getStdLibPath("kotlin-test-common"),
-        getStdLibPath("kotlin-reflect"),
-        getStdLibPath("kotlin-script-runtime"),
-        getStdLibPath("kotlin-stdlib-jdk8"),
-        getStdLibPath("kotlin-stdlib-jdk7"),
-        getStdLibPath("kotlin-gradle-plugin"),
+    fun jvmStdLibPaths(version: String? = null) = listOf(
+        getStdLibPath("kotlin-stdlib", version),
+        getStdLibPath("kotlin-stdlib-common", version),
+        getStdLibPath("kotlin-test", version),
+        getStdLibPath("kotlin-test-common", version),
+        getStdLibPath("kotlin-reflect", version),
+        getStdLibPath("kotlin-script-runtime", version),
+        getStdLibPath("kotlin-stdlib-jdk8", version),
+        getStdLibPath("kotlin-stdlib-jdk7", version),
+        getStdLibPath("kotlin-gradle-plugin", version),
     )
 
     //Vert.x

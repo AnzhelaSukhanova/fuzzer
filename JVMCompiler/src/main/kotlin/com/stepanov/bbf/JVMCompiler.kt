@@ -27,10 +27,11 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
         val statuses = mutableListOf<KotlincInvokeStatus>()
         val directory = "${System.getProperty("user.home")}/fuzzer/"
         val destination = "$directory/JVMCompiler/${project.dir}/"
-        val args = prepareArgs(project, destination)
+        val args = prepareArgs(project, destination, version)
         var combinedOutput = ""
         var exitCode = 0
         project.files.forEach {
+            // Something is freezing in this block: maybe the problem is in not reading the output stream
             val hasTimeout = !executeCompiler {
                 val process = ProcessBuilder(
                     directory + "commandLineCompiler.sh",
@@ -42,6 +43,7 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
                 combinedOutput = reader.readText()
                 exitCode = process.waitFor()
             }
+            //
             val status = KotlincInvokeStatus(
                 combinedOutput,
                 exitCode == 0,
@@ -79,18 +81,19 @@ open class JVMCompiler: CommonCompiler(VertxAddresses.JVMCompiler) {
         executeCompilationCheck(project) // check for seeds and test infrastructure
 
     // TODO: add some additional arguments maybe
-    private fun prepareArgs(project: ProjectMessage, destination: String): K2JVMCompilerArguments {
+    private fun prepareArgs(project: ProjectMessage, destination: String, version: String? = null): K2JVMCompilerArguments {
         val projectArgs = K2JVMCompilerArguments()
         val compilerArgs = "${System.getProperty("user.home")}/fuzzer/JVMCompiler/${getAllPathsInLine(project)} -d $destination".split(" ")
         projectArgs.apply { K2JVMCompiler().parseArguments(compilerArgs.toTypedArray(), this) }
         projectArgs.classpath =
-            "${CompilerArgs.jvmStdLibPaths().joinToString(
+            "${CompilerArgs.jvmStdLibPaths(version).joinToString(
                 separator = ":"
             )}:${System.getProperty("java.class.path")}"
                 .split(":")
                 .filter { it.isNotEmpty() }
                 .toSet().toList()
                 .joinToString(":")
+
         projectArgs.jvmTarget = "1.8"
         projectArgs.optIn = arrayOf("kotlin.ExperimentalStdlibApi", "kotlin.contracts.ExperimentalContracts")
 

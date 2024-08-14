@@ -161,7 +161,7 @@ class RegressionTarget: SingleSourceTarget() {
 @Serializable
 @SerialName("test")
 class TestTarget: SingleSourceTarget() {
-    private val files = getAllKtFiles("tmp/arrays/test")?.map { file -> file.name  }!! as MutableList<String>
+    private val files = getAllKtFiles("tmp/arrays/test")?.map { file -> file.name }!! as MutableList<String>
     private var tmpFileName: String? = null
 
     private val code

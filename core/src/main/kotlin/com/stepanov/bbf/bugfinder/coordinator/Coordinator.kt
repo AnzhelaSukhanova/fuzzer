@@ -78,7 +78,7 @@ class Coordinator(private val mutationProblem: MutationProblem): AbstractVerticl
                     if (mutationProblem.mutationTarget is RegressionTarget) {
                         val filename = result.projectMessage.files[0].name
                         val newWeight = WeightedProjects.reduceWeight(result.projectMessage.dir + filename)
-                        log.debug("$filename have new weight: $newWeight")
+                        log.debug("${result.projectMessage.dir}$filename have new weight: $newWeight")
                         WeightedProjects.fileToWeight.dump("seedWeightsDump.txt")
                         projectCrashed = true
                     }
