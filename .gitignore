@@ -1,5 +1,7 @@
 /.idea
 /.gradle
+stats/.idea
+stats/__pycache__
 
 */build
 */logs
@@ -27,6 +29,7 @@ core/dummy.kt
 core/seedWeightsDump.txt
 core/test.txt
 
+core/tmp/arrays/test/
 core/tmp/results/curBugs/
 core/tmp/results/shortRuns/*
 core/tmp/results/run-*
@@ -34,6 +37,10 @@ core/tmp/results/JVM-*
 
 1.txt
 */1.txt
+classpath.txt
 
 kotlinc1.8.0/
 kotlinc1.9.0/
+
+stats/bug_stats.png
+stats/compiler_stats.png
